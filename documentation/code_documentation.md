@@ -1,7 +1,7 @@
 ---
 title: "IDA Cryptographic finder extension dokumentace"
 author: ["Jan Uhlik"]
-date: "2024-08-15"
+date: "2024-08-13"
 subject: "Markdown"
 keywords: [reversing, exploit-dev, shellcode]
 subtitle: "Zapoctovy program, Programovani 2"
