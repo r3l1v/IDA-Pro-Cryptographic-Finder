@@ -33,13 +33,13 @@ Pomocí výše zmíněného API, IDA umožňuje prohlížení kódů v takzvané
 
 Výsledný program bude prohledávat (nejen) tyto flowcharty a počítat instrukce z předem určeného seznamu, které mohou být použité v kryptografických algoritmech (opakovaný xor, add, shift apod.). 
 
-Finální algoritmus problému bude tedy pro daný dekompilovany kód prohledat všechny tyto flow charty pro daný dekompilovany kód. Tedy prohledat grafy všech flowchartu. (Abych byl korektní, tak pro každý pointer funkce který IDA API vrátí v daném dekompilovanem kódu prohledat jeho graf flowchartu).
+Finální algoritmus problému bude tedy pro daný dekompilovany kód prohledat všechny tyto flow charty. Tedy prohledat grafy všech flowchartu. (Abych byl korektní, tak pro každý pointer funkce který IDA API vrátí v daném dekompilovanem kódu prohledat jeho graf flowchartu).
 
 V každém tomto podgrafu bude cílem najít frekvenci těchto instrukcí a vrátit jako výstup blok ve flowchartu kde je těchto instrukcí nejvíce.
 
 Cílem programu bude urychlit process reverse engineeringu větších binárních souborů a redukovat nutnost procházet velké množství funkcí manuálně. Při hledání potenciálních kandidátů které slouží jako šifrovací funkce, ať standartnich algoritmu nebo jakýchkoliv custom šifrám. Manuální ověření bude pořád nutné, nicméně tento program má za cíl z možných stovek či tisíců funkci toto množství o řád či dva zmenšit. 
 
-## Teoreticke popis reseni problemu
+## Teoreticky popis reseni problemu
 
 Pro nalezení optimálních bloku a frekcenci jsem se rozhodl řešení rozdělit na tři casti. První část, které prohledá výše zmíněné flowchary, identifikuje zacyklené části těchto grafů a spočítá v nich frekvenci instrukcí. Druhá část, která pouze instrukci po instrukci projede dekompilovany kód a najde bloky v binárním souboru a nalezne frekvence námi hledaných instrukci pouze v těchto blocích. Tyto bloky vůbec nemusí ve spuštění programu být za sebou, jsou pouze seřazeny od nejmenší virtuální adresy v programu po největší.
 
@@ -77,7 +77,7 @@ Bloky které zbyly, program vypíše do standartniho outputu v tabulce která bu
 
 ## Technicka Dokumentace kodu
 
-Tato kapitola prochází částí kódů ve stejném pořadí jako kapitoly v teoretickém popisu problém a soustavně vysvětluje jejich technické provedení v kontextu řešení problémů. 
+Tato kapitola prochází části kódu ve stejném pořadí jako kapitoly v teoretickém popisu problému a soustavně vysvětluje jejich technické provedení v kontextu řešení tohoto problému. 
 
 ### IDA Plugin
 
@@ -191,7 +191,7 @@ SCC = tarjan(flow_chart)
 non_trivial_loops = [component for component in SCC if len(component) > 1]
 ```
 
-Tento algoritmus pomocí listů ```low``` a ```disc``` postupně obarví všechny vrcholy grafu na jednotlivé silně souvislé komponenty. Každý blok a jeho všichni následovníci jsou rekurzivně prohledání funkci ```SCC_for_current_vertex```. Tato funkce najde komponentu souvislosti pro daný vstupní vrchol, buď založí novou v listu ```result``` a nebo tento vrchol přidá do už existující komponenty. Kompletní popis algoritmu je k nalezení [zde](https://en.wikipedia.org/wiki/Tarjan%27s_strongly_connected_components_algorithm) a [zde](https://www.geeksforgeeks.org/tarjan-algorithm-find-strongly-connected-components/). 
+Tento algoritmus pomocí listů ```low``` a ```disc``` postupně obarví všechny vrcholy grafu na jednotlivé silně souvislé komponenty. Každý blok a jeho všichni následovníci jsou rekurzivně prohledáni funkci ```SCC_for_current_vertex```. Tato funkce najde komponentu souvislosti pro daný vstupní vrchol, buď založí novou v listu ```result``` a nebo tento vrchol přidá do už existující komponenty. Kompletní popis algoritmu je k nalezení [zde](https://en.wikipedia.org/wiki/Tarjan%27s_strongly_connected_components_algorithm) a [zde](https://www.geeksforgeeks.org/tarjan-algorithm-find-strongly-connected-components/). 
 
 ```python
 def tarjan(flow_chart):
@@ -217,7 +217,7 @@ def tarjan(flow_chart):
             SCC_for_current_vertex(block)
 ```
 
-Po skončení algoritmu, vyfiltrujeme triviální cykly velikost 1. Poté v každé komponentě souvislosti spočítáme frekvenci námi zadefinovanych instrukcí. Bloky v komponentech jsou také vybarvené zelene, pro debugovaci a demonstrativní účely.
+Po skončení algoritmu, vyfiltrujeme triviální cykly velikost 1. Poté v každé komponentě souvislosti spočítáme frekvenci námi zadefinovanych instrukcí. Bloky v komponentech jsou také vybarveny zelene, pro debugovaci a demonstrativní účely.
 
 ```python
 # saving all non trivial loops to global array
@@ -276,7 +276,7 @@ Tato funkce opět iteruje přes všechny funkce v binárním souboru pomocí [id
 
 Následně pro každou funkci budeme iterovat přes všechny adresy v ní. Každou adresu opet dekompilujeme pomocí [decode_insn](https://hex-rays.com//products/ida/support/idapython_docs/ida_ua.html#ida_ua.decode_insn). Nyní tedy iterujeme už přes instrukce ve funkci.
 
-Každou instrukci přidáme na konec fronty o maximální velikost 30 instrukcí. Zároveň z fronty odebereme první instrukcí v ní. Takto procházíme blok o velikost 30 instrukcí najednou. Pro každou přidanou instrukci do fronty kontrolujeme zda se nenachází v námi hledaném seznamu "kryptografických instrukcí". Pokud ano, inkrementujeme proměnou ```counter```. Pokud je naopak odebírána instrukce z fronty v seznamu "kryptografických instrukcí", ```counter``` snížíme. 
+Každou instrukci přidáme na konec fronty o maximální velikost 30 instrukcí. Zároveň z fronty odebereme první instrukci v ní. Takto procházíme blok o velikost 30 instrukcí najednou. Pro každou přidanou instrukci do fronty kontrolujeme zda se nenachází v námi hledaném seznamu "kryptografických instrukcí". Pokud ano, inkrementujeme proměnou ```counter```. Pokud je naopak odebírána instrukce z fronty v seznamu "kryptografických instrukcí", ```counter``` snížíme. 
 
 Tímto způsobem funkce ```density_search``` projede všechny adresy funkce a uchová bloky o velikosti 30 s největšími počty frekvencí ve slovníku ```chunk_max_addr_dict```. Následně tento slovník poté vrátí.
 
@@ -316,12 +316,12 @@ for eaddr in idautils.Heads(funct_t.start_ea, funct_t.end_ea):
 Třetí fáze je implementována pomocí funkcí ```find_overlap``` a ```filtering_results```. První z nich,  ```find_overlap``` jako vstup vezme slovníky ```all_non_trivial_loops, density_search_dict``` z prvních dvou fází a vyfiltruje následující tři situace.
 
 1. Blok ze slovníku ```density_search_dict``` z druhé fáze je celý obsažen v jakémkoliv bloku v silne komponentě grafu ve slovníku ```all_non_trivial_loops```
-2. Blok ze slovníku ```density_search_dict``` z druhé přímo začíná v jakémkoliv bloku v silne komponentě grafu ve slovníku ```all_non_trivial_loops``` ale končí v jiném bloku 
-3. Blok ze slovníku ```density_search_dict``` z druhé přímo končí v jakémkoliv bloku v silne komponentě grafu ve slovníku ```all_non_trivial_loops``` ale začíná v jiném bloku
+2. Blok ze slovníku ```density_search_dict``` z druhé fáze přímo začíná v jakémkoliv bloku v silne komponentě grafu ve slovníku ```all_non_trivial_loops``` ale končí v jiném bloku 
+3. Blok ze slovníku ```density_search_dict``` z druhé fáze přímo končí v jakémkoliv bloku v silne komponentě grafu ve slovníku ```all_non_trivial_loops``` ale začíná v jiném bloku
 
-První situace je vyřešena funkcí ```delete_fully_overlapping```. Která iteruje přes všechny kombinace bloků z obou fází. Toto je bohužel implementováno přes vnořené cykly, jelikož každý slovník uchovává v sobě listy bloku. 
+První situace je vyřešena funkce ```delete_fully_overlapping```. Která iteruje přes všechny kombinace bloků z obou fází. Toto je bohužel implementováno přes vnořené cykly, jelikož každý slovník uchovává v sobě listy bloku. 
 
-Jakmile se najde blok z druhé fáze který je celý obsažený v bloku z první fáze, je vymazán 
+Jakmile se najde blok z druhé fáze který je celý obsažený v bloku z první fáze, je vymazán.
 
 ```python
         if address[0] > block.start_ea and address[1] < block.end_ea:
@@ -530,11 +530,11 @@ Testování programu probíhalo hlavně na několika veřejných "crackme" úloh
 
 Seznam úloh společně s odkazy kde je možné najít jak jejich binární soubor, nebo dohledat řešení:
 
-1. Hack thé Box: [Simple Encryptor](https://app.hackthebox.com/challenges/Simple%2520Encryptor)
-2. Hack thé Box: [Encryption Bot](https://app.hackthebox.com/challenges/Encryption%2520Bot)
-3. Hack thé Box: [RAuth](https://app.hackthebox.com/challenges/RAuth)
+1. Hack the Box: [Simple Encryptor](https://app.hackthebox.com/challenges/Simple%2520Encryptor)
+2. Hack the Box: [Encryption Bot](https://app.hackthebox.com/challenges/Encryption%2520Bot)
+3. Hack the Box: [RAuth](https://app.hackthebox.com/challenges/RAuth)
 4. Crackmes.one: [crypto1_crackme](https://crackmes.one/crackme/5ab77f5b33c5d40ad448c5c6)
-5. Crackmes.one: [find thé encryptor](https://crackmes.one/crackme/6543e9b60f4238b24302b3d2)
+5. Crackmes.one: [find the encryptor](https://crackmes.one/crackme/6543e9b60f4238b24302b3d2)
 6. Crackmes.one: [cryptoleaks](https://crackmes.one/crackme/60d8d7bd33c5d410b8843087)
 7. Crackmes.one: [Quick Crypto, 18k](https://crackmes.one/crackme/5d07f03233c5d41c6d56e10c)
 8. Crackmes.one: [encrypted_box](https://crackmes.one/crackme/64f1f7dbd931496abf90952d)
@@ -579,7 +579,7 @@ Odkaz na kompletní vyřešení úlohy lze najít [zde](https://github.com/khiro
 
 ### Uloha cislo 3
 
-V této úloze je v binárním souboru celkem 708 funkcí. Tento binární soubor je jako jediný specifický tím, že byl kompilovaný z růst kódu.
+V této úloze je v binárním souboru celkem 708 funkcí. Tento binární soubor je jako jediný specifický tím, že byl kompilovaný z rust kódu.
 
 ![Pocet funkci v binarnim souboru Rauth](./img/uloha_3_funkce.png){ width=25% }
 
@@ -587,7 +587,7 @@ Struktura funkce ```Main``` je v tomto případě velmi komplikovana, nicméně 
 
 ![Funkce Salsa20 pouzita ve funci Main](./img/uloha_3_main.png){ width=70% }
 
-Ve výsledcích se opět tato funkce (```salsa20```) vyskytuje několikrát, nicméně pouze ve výsledcích z druhé fáze a to hned několikrát, díky její délce. V První fázi tato funkce nebyla nalezena. Ve vysledcich se také objevuje tentokrát veliké množství funkcí ze standardnich knihoven Rustu. Funkce která je ve výsledcích také zajímavá je funkce kterou Rust používá pro dekompresi dat. V této funkci byla v první fázi nalezena největší frekvence námi hledaných instrukcí. 
+Ve výsledcích se opět tato funkce (```salsa20```) vyskytuje několikrát, nicméně pouze ve výsledcích z druhé fáze, díky její délce. V První fázi tato funkce nebyla nalezena. Ve vysledcich se také objevuje tentokrát veliké množství funkcí ze standardnich knihoven Rustu. Funkce která je ve výsledcích také zajímavá je funkce kterou Rust používá pro dekompresi dat. V této funkci byla v první fázi nalezena největší frekvence námi hledaných instrukcí. 
 
 ![Vysledky programu na binarnim souboru Rauth](./img/uloha_3_vysledky.png){ width=60% }
 
@@ -621,7 +621,7 @@ V této úloze je ve funkci ```main``` je zavolána funkce ```checkFlag```, kter
 
 ![Funkce Main volajici funkci checkFlag](./img/uloha_5_main.png){ width=60% }
 
-Nicméně tato funkce provede enkrypci tak že parametry předává mezi různými c++ šablonami s integer streamy a velkým počtem funkcí ze standartnich knihovém. Toto má za důsledek to, že takřka žádné námi hledané "kryprograficke instrukce" se v ní nevyskytují a jsou ve velkých počtech nalezeny v těchto funkcích, jak je vidět ve výsledcích níže. Lze z nich poté nazpět provést analýzu jak se k nim user input dostává, nicméně opačným způsobem (analyzování od počátku funkce main) by bylo mnohem rychlejší.
+Nicméně tato funkce provede enkrypci tak že parametry předává mezi různými c++ šablonami s integer streamy a velkým počtem funkcí ze standartnich knihoven. Toto má za důsledek to, že takřka žádné námi hledané "kryprograficke instrukce" se v ní nevyskytují a jsou ve velkých počtech nalezeny v těchto funkcích, jak je vidět ve výsledcích níže. Lze z nich poté nazpět provést analýzu jak se k nim user input dostává, nicméně opačným způsobem (analyzování od počátku funkce main) by bylo mnohem rychlejší.
 
 ![Vysledky programu na binarnim souboru find the encryptor](./img/uloha_5_vysledky.png){ width=60% }
 
@@ -633,7 +633,7 @@ V této úloze je v binárním souboru celkem 83 funkcí.
 
 ![Pocet funkci v binarnim souboru find the cryptoleaks](./img/uloha_6_funkce.png){ width=25% }
 
-Tato úloha je specifická tím že běží ve více vláknech a vstup je do ní předáván přes síťové funkce ```recv()``` a ```send()```. Z těchto funkcí je postupně input načítat, ukládán do paměti a upravován instrukcemi ```xor``` a ```add```. Hlavní funkce zodpovědná za toto čtení je ```sub_1720```.
+Tato úloha je specifická tím že běží ve více vláknech a vstup je do ní předáván přes síťové funkce ```recv()``` a ```send()```. Z těchto funkcí je postupně input načítan, ukládán do paměti a upravován instrukcemi ```xor``` a ```add```. Hlavní funkce zodpovědná za toto čtení je ```sub_1720```.
 
 ![Cast funkce sub_1720 ktera cte data pomoci recv()](./img/uloha_6_main.png){ width=50% }
 
@@ -649,7 +649,7 @@ V této úloze je v binárním souboru celkem 74 funkcí.
 
 ![Pocet funkci v binarnim souboru Quick Crypto, 18k](./img/uloha_7_funkce.png){ width=25% }
 
-Tato úloha obsahuje funkci ```decipher()``` která šifruje data. Úkol této úlohy je pouze obrátít co tato funkce dělá. Tato funkce obsahuje pouze jeden blok, ve kterém jse postupně několikrát procházeno přes všechny charaktery ve stringu a pomocí levých a pravých shift instrukcí a ```xor``` je string převeden na "zašifrovanou" verzi. Tato funkce je velmi dlouhá a obsahuje velký počet těchto instrukcí.
+Tato úloha obsahuje funkci ```decipher()``` která šifruje data. Úkol této úlohy je pouze obrátít co tato funkce dělá. Tato funkce obsahuje pouze jeden blok, ve kterém jse postupně několikrát procházeno přes všechny charaktery ve stringu a pomocí levých a pravých shift instrukcí a ```xor```, je string převeden na "zašifrovanou" verzi. Tato funkce je velmi dlouhá a obsahuje velký počet těchto instrukcí.
 
 ![Funkce decipher v binarnim souboru Quick Crypto, 18k](./img/uloha_7_enkrypce.png){ width=40% }
 
